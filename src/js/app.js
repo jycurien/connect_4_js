@@ -25,8 +25,40 @@ const initBoard = (height, width) => {
   return board
 }
 
+const getLowestEmptyRowNumber = (board, columnNumber) => {
+  if (board[0][columnNumber].className !== 'empty') {
+    return -1 // Column is full
+  }
+  let i = 0
+  while (i < BOARDHEIGHT - 1) {
+    if (board[i + 1][columnNumber].className !== 'empty') {
+      return i
+    }
+    i++
+  }
+  return i
+}
+
 const game = () => {
   const board = initBoard(BOARDHEIGHT, BOARDWIDTH)
+  const maxNumberOfTurns = BOARDHEIGHT * BOARDWIDTH
+  let turnCounter = 0
+  let player = 'player1'
+
+  document.querySelector('table').addEventListener('click', function (e) {
+    const colNumber = parseInt(e.target.dataset.column, 10)
+    const rowNumber = getLowestEmptyRowNumber(board, colNumber)
+    if (rowNumber < 0) {
+      return // Column is full
+    }
+    turnCounter++
+    board[rowNumber][colNumber].className = player
+    if (turnCounter >= maxNumberOfTurns) {
+      return // Board is full
+    }
+    player = player === 'player1' ? 'player2' : 'player1'
+    document.querySelector('#message').textContent = `${player} turn`
+  })
 }
 
 window.addEventListener('DOMContentLoaded', () => {
