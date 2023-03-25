@@ -46,10 +46,10 @@ const game = () => {
   let player = 'player1'
 
   document.querySelector('table').addEventListener('click', function (e) {
-    const colNumber = parseInt(e.target.dataset.column, 10)
-    if (!colNumber) {
-      return //
+    if (undefined === e.target.dataset.column) {
+      return // Click on table but not td
     }
+    const colNumber = parseInt(e.target.dataset.column, 10)
     const rowNumber = getLowestEmptyRowNumber(board, colNumber)
     if (rowNumber < 0) {
       return // Column is full
