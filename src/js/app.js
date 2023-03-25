@@ -66,7 +66,7 @@ const isWinner = (board, player, x, y) => {
     countRowRight++
     i++
   }
-  countRow = countRowLeft + countRowRight
+  countRow += countRowLeft + countRowRight
   if (countRow === 4) {
     return true
   }
@@ -131,6 +131,16 @@ const isWinner = (board, player, x, y) => {
   return false
 }
 
+const drop = (board, player, rowNumber, colNumber, currentRow) => {
+  board[currentRow][colNumber].className = player
+  if (currentRow < rowNumber) {
+    setTimeout(() => {
+      board[currentRow][colNumber].className = 'empty'
+      drop(board, player, rowNumber, colNumber, currentRow + 1)
+    }, 40)
+  }
+}
+
 const game = () => {
   const board = initBoard(BOARDHEIGHT, BOARDWIDTH)
   const maxNumberOfTurns = BOARDHEIGHT * BOARDWIDTH
@@ -151,7 +161,7 @@ const game = () => {
       return // Column is full
     }
     turnCounter++
-    board[rowNumber][colNumber].className = player
+    drop(board, player, rowNumber, colNumber, 0)
     if (isWinner(board, player, colNumber, rowNumber)) {
       document.querySelector('#message').textContent = `${player} has won!`
       gameOver = true
