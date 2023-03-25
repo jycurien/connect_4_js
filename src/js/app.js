@@ -47,6 +47,9 @@ const game = () => {
 
   document.querySelector('table').addEventListener('click', function (e) {
     const colNumber = parseInt(e.target.dataset.column, 10)
+    if (!colNumber) {
+      return //
+    }
     const rowNumber = getLowestEmptyRowNumber(board, colNumber)
     if (rowNumber < 0) {
       return // Column is full
