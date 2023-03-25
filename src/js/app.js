@@ -39,13 +39,109 @@ const getLowestEmptyRowNumber = (board, columnNumber) => {
   return i
 }
 
+const isWinner = (board, player, x, y) => {
+  let i = x
+  let j = y
+
+  // count column
+  let countColumn = 1
+  while (j < BOARDHEIGHT - 1 && board[j + 1][x].className === player) {
+    countColumn++
+    j++
+  }
+  if (countColumn === 4) {
+    return true
+  }
+
+  // count row
+  let countRow = 1
+  let countRowLeft = 0
+  let countRowRight = 0
+  while (i > 0 && board[y][i - 1].className === player) {
+    countRowLeft++
+    i--
+  }
+  i = x
+  while (i < BOARDWIDTH - 1 && board[y][i + 1].className === player) {
+    countRowRight++
+    i++
+  }
+  countRow = countRowLeft + countRowRight
+  if (countRow === 4) {
+    return true
+  }
+
+  //count diagonal
+  let countDiag1 = 1
+  let countDiagUpLeft = 0
+  i = x
+  j = y
+  while (j > 0 && i > 0 && board[j - 1][i - 1].className === player) {
+    countDiagUpLeft++
+    i--
+    j--
+  }
+  let countDiagDownRight = 0
+  i = x
+  j = y
+  while (
+    j < BOARDHEIGHT - 1 &&
+    i < BOARDWIDTH - 1 &&
+    board[j + 1][i + 1].className === player
+  ) {
+    countDiagDownRight++
+    i++
+    j++
+  }
+  countDiag1 += countDiagUpLeft + countDiagDownRight
+  if (countDiag1 === 4) {
+    return true
+  }
+
+  let countDiag2 = 1
+  let countDiagDownLeft = 0
+  i = x
+  j = y
+  while (
+    j < BOARDHEIGHT - 1 &&
+    i > 0 &&
+    board[j + 1][i - 1].className === player
+  ) {
+    countDiagDownLeft++
+    i--
+    j++
+  }
+  let countDiagUpRight = 0
+  i = x
+  j = y
+  while (
+    j > 0 &&
+    i < BOARDWIDTH - 1 &&
+    board[j - 1][i + 1].className === player
+  ) {
+    countDiagUpRight++
+    i++
+    j--
+  }
+  countDiag2 += countDiagDownLeft + countDiagUpRight
+  if (countDiag2 === 4) {
+    return true
+  }
+
+  return false
+}
+
 const game = () => {
   const board = initBoard(BOARDHEIGHT, BOARDWIDTH)
   const maxNumberOfTurns = BOARDHEIGHT * BOARDWIDTH
   let turnCounter = 0
   let player = 'player1'
+  let gameOver = false
 
   document.querySelector('table').addEventListener('click', function (e) {
+    if (gameOver) {
+      return
+    }
     if (undefined === e.target.dataset.column) {
       return // Click on table but not td
     }
@@ -56,8 +152,15 @@ const game = () => {
     }
     turnCounter++
     board[rowNumber][colNumber].className = player
+    if (isWinner(board, player, colNumber, rowNumber)) {
+      document.querySelector('#message').textContent = `${player} has won!`
+      gameOver = true
+      return
+    }
     if (turnCounter >= maxNumberOfTurns) {
-      return // Board is full
+      document.querySelector('#message').textContent = `It's a draw game!`
+      gameOver = true
+      return
     }
     player = player === 'player1' ? 'player2' : 'player1'
     document.querySelector('#message').textContent = `${player} turn`
