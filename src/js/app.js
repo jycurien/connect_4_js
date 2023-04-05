@@ -131,13 +131,15 @@ const isWinner = (board, player, x, y) => {
   return false
 }
 
-const drop = (board, player, rowNumber, colNumber, currentRow) => {
+const drop = async (board, player, rowNumber, colNumber, currentRow) => {
   board[currentRow][colNumber].className = player
   if (currentRow < rowNumber) {
-    setTimeout(() => {
-      board[currentRow][colNumber].className = 'empty'
-      drop(board, player, rowNumber, colNumber, currentRow + 1)
-    }, 40)
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        board[currentRow][colNumber].className = 'empty'
+        drop(board, player, rowNumber, colNumber, currentRow + 1).then(resolve)
+      }, 40)
+    })
   }
 }
 
@@ -147,8 +149,9 @@ const game = () => {
   let turnCounter = 0
   let player = 'player1'
   let gameOver = false
+  let playing = false
 
-  document.querySelector('table').addEventListener('click', function (e) {
+  document.querySelector('table').addEventListener('click', async function (e) {
     if (gameOver) {
       return
     }
@@ -160,8 +163,12 @@ const game = () => {
     if (rowNumber < 0) {
       return // Column is full
     }
+    if (playing) {
+      return
+    }
+    playing = true
     turnCounter++
-    drop(board, player, rowNumber, colNumber, 0)
+    await drop(board, player, rowNumber, colNumber, 0)
     if (isWinner(board, player, colNumber, rowNumber)) {
       document.querySelector('#message').textContent = `${player} has won!`
       gameOver = true
@@ -174,6 +181,7 @@ const game = () => {
     }
     player = player === 'player1' ? 'player2' : 'player1'
     document.querySelector('#message').textContent = `${player} turn`
+    playing = false
   })
 }
 
