@@ -38,31 +38,38 @@ const getLowestEmptyRowNumber = (board, columnNumber) => {
   return i
 }
 
-const isWinner = (board, player, x, y) => {
-  const countCells = (j, i, dj, di) => {
-    let count = 0
+const countCells = (board, player, j, i, dj, di) => {
+  let count = 0
 
-    while (
-      j >= 0 &&
-      j < BOARDHEIGHT &&
-      i >= 0 &&
-      i < BOARDWIDTH &&
-      board[j][i].className === player
-    ) {
-      count++
-      j += dj
-      i += di
-    }
-
-    return count
+  while (
+    j >= 0 &&
+    j < BOARDHEIGHT &&
+    i >= 0 &&
+    i < BOARDWIDTH &&
+    board[j][i].className === player
+  ) {
+    count++
+    j += dj
+    i += di
   }
 
-  const countColumn = countCells(y + 1, x, 1, 0) + 1
-  const countRow = countCells(y, x - 1, 0, -1) + countCells(y, x + 1, 0, 1) + 1
+  return count
+}
+
+const isWinner = (board, player, x, y) => {
+  const countColumn = countCells(board, player, y + 1, x, 1, 0) + 1
+  const countRow =
+    countCells(board, player, y, x - 1, 0, -1) +
+    countCells(board, player, y, x + 1, 0, 1) +
+    1
   const countDiagonal1 =
-    countCells(y - 1, x - 1, -1, -1) + countCells(y + 1, x + 1, 1, 1) + 1
+    countCells(board, player, y - 1, x - 1, -1, -1) +
+    countCells(board, player, y + 1, x + 1, 1, 1) +
+    1
   const countDiagonal2 =
-    countCells(y + 1, x - 1, 1, -1) + countCells(y - 1, x + 1, -1, 1) + 1
+    countCells(board, player, y + 1, x - 1, 1, -1) +
+    countCells(board, player, y - 1, x + 1, -1, 1) +
+    1
 
   return (
     countColumn >= 4 ||
