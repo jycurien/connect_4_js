@@ -87,6 +87,7 @@ const drop = async (board, player, rowNumber, colNumber, currentRow) => {
 const game = () => {
   const board = initBoard(BOARDHEIGHT, BOARDWIDTH)
   const maxNumberOfTurns = BOARDHEIGHT * BOARDWIDTH
+  const messageElt = document.querySelector('#message')
   let turnCounter = 0
   let player = 'player1'
   let gameOver = false
@@ -105,17 +106,17 @@ const game = () => {
     turnCounter++
     await drop(board, player, rowNumber, colNumber, 0)
     if (isWinner(board, player, colNumber, rowNumber)) {
-      document.querySelector('#message').textContent = `${player} has won!`
+      messageElt.textContent = `${player} has won!`
       gameOver = true
       return
     }
     if (turnCounter >= maxNumberOfTurns) {
-      document.querySelector('#message').textContent = `It's a draw game!`
+      messageElt.textContent = `It's a draw game!`
       gameOver = true
       return
     }
     player = player === 'player1' ? 'player2' : 'player1'
-    document.querySelector('#message').textContent = `${player} turn`
+    messageElt.textContent = `${player} turn`
     blockedInput = false
   })
 }
