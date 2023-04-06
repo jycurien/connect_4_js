@@ -8,10 +8,9 @@ const initBoard = (height, width) => {
 
   const tableElt = document.createElement('table')
   boardElt.appendChild(tableElt)
-  const board = Array.from(height, () => [])
+  const board = Array.from({ length: height }, () => [])
   for (let i = 0; i < height; i++) {
     const rowElt = document.createElement('tr')
-    board.push([])
     for (let j = 0; j < width; j++) {
       const cellElt = document.createElement('td')
       cellElt.className = 'empty'
