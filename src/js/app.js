@@ -8,16 +8,15 @@ const initBoard = (height, width) => {
 
   const tableElt = document.createElement('table')
   boardElt.appendChild(tableElt)
-  const board = []
+  const board = Array.from({ length: height }, () => [])
   for (let i = 0; i < height; i++) {
-    rowElt = document.createElement('tr')
+    const rowElt = document.createElement('tr')
     board.push([])
     for (let j = 0; j < width; j++) {
-      cellElt = document.createElement('td')
+      const cellElt = document.createElement('td')
       cellElt.className = 'empty'
       cellElt.dataset.column = j
       rowElt.appendChild(cellElt)
-      board[i].push([])
       board[i][j] = cellElt
     }
     tableElt.appendChild(rowElt)
@@ -40,95 +39,37 @@ const getLowestEmptyRowNumber = (board, columnNumber) => {
 }
 
 const isWinner = (board, player, x, y) => {
-  let i = x
-  let j = y
+  const countCells = (j, i, dj, di) => {
+    let count = 0
 
-  // count column
-  let countColumn = 1
-  while (j < BOARDHEIGHT - 1 && board[j + 1][x].className === player) {
-    countColumn++
-    j++
-  }
-  if (countColumn === 4) {
-    return true
-  }
+    while (
+      j >= 0 &&
+      j < BOARDHEIGHT &&
+      i >= 0 &&
+      i < BOARDWIDTH &&
+      board[j][i].className === player
+    ) {
+      count++
+      j += dj
+      i += di
+    }
 
-  // count row
-  let countRow = 1
-  let countRowLeft = 0
-  let countRowRight = 0
-  while (i > 0 && board[y][i - 1].className === player) {
-    countRowLeft++
-    i--
-  }
-  i = x
-  while (i < BOARDWIDTH - 1 && board[y][i + 1].className === player) {
-    countRowRight++
-    i++
-  }
-  countRow += countRowLeft + countRowRight
-  if (countRow === 4) {
-    return true
+    return count
   }
 
-  //count diagonal
-  let countDiag1 = 1
-  let countDiagUpLeft = 0
-  i = x
-  j = y
-  while (j > 0 && i > 0 && board[j - 1][i - 1].className === player) {
-    countDiagUpLeft++
-    i--
-    j--
-  }
-  let countDiagDownRight = 0
-  i = x
-  j = y
-  while (
-    j < BOARDHEIGHT - 1 &&
-    i < BOARDWIDTH - 1 &&
-    board[j + 1][i + 1].className === player
-  ) {
-    countDiagDownRight++
-    i++
-    j++
-  }
-  countDiag1 += countDiagUpLeft + countDiagDownRight
-  if (countDiag1 === 4) {
-    return true
-  }
+  const countColumn = countCells(y + 1, x, 1, 0) + 1
+  const countRow = countCells(y, x - 1, 0, -1) + countCells(y, x + 1, 0, 1) + 1
+  const countDiagonal1 =
+    countCells(y - 1, x - 1, -1, -1) + countCells(y + 1, x + 1, 1, 1) + 1
+  const countDiagonal2 =
+    countCells(y + 1, x - 1, 1, -1) + countCells(y - 1, x + 1, -1, 1) + 1
 
-  let countDiag2 = 1
-  let countDiagDownLeft = 0
-  i = x
-  j = y
-  while (
-    j < BOARDHEIGHT - 1 &&
-    i > 0 &&
-    board[j + 1][i - 1].className === player
-  ) {
-    countDiagDownLeft++
-    i--
-    j++
-  }
-  let countDiagUpRight = 0
-  i = x
-  j = y
-  while (
-    j > 0 &&
-    i < BOARDWIDTH - 1 &&
-    board[j - 1][i + 1].className === player
-  ) {
-    countDiagUpRight++
-    i++
-    j--
-  }
-  countDiag2 += countDiagDownLeft + countDiagUpRight
-  if (countDiag2 === 4) {
-    return true
-  }
-
-  return false
+  return (
+    countColumn >= 4 ||
+    countRow >= 4 ||
+    countDiagonal1 >= 4 ||
+    countDiagonal2 >= 4
+  )
 }
 
 const drop = async (board, player, rowNumber, colNumber, currentRow) => {
@@ -149,24 +90,18 @@ const game = () => {
   let turnCounter = 0
   let player = 'player1'
   let gameOver = false
-  let playing = false
+  let blockedInput = false
 
   document.querySelector('table').addEventListener('click', async function (e) {
-    if (gameOver) {
+    if (gameOver || undefined === e.target.dataset.column || blockedInput) {
       return
-    }
-    if (undefined === e.target.dataset.column) {
-      return // Click on table but not td
     }
     const colNumber = parseInt(e.target.dataset.column, 10)
     const rowNumber = getLowestEmptyRowNumber(board, colNumber)
     if (rowNumber < 0) {
       return // Column is full
     }
-    if (playing) {
-      return
-    }
-    playing = true
+    blockedInput = true
     turnCounter++
     await drop(board, player, rowNumber, colNumber, 0)
     if (isWinner(board, player, colNumber, rowNumber)) {
@@ -181,7 +116,7 @@ const game = () => {
     }
     player = player === 'player1' ? 'player2' : 'player1'
     document.querySelector('#message').textContent = `${player} turn`
-    playing = false
+    blockedInput = false
   })
 }
 
