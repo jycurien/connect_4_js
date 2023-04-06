@@ -8,7 +8,7 @@ const initBoard = (height, width) => {
 
   const tableElt = document.createElement('table')
   boardElt.appendChild(tableElt)
-  const board = Array.from({ length: height }, () => [])
+  const board = Array.from(height, () => [])
   for (let i = 0; i < height; i++) {
     const rowElt = document.createElement('tr')
     board.push([])
