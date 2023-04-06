@@ -94,14 +94,28 @@ const drop = async (board, player, rowNumber, colNumber, currentRow) => {
 }
 
 const generateComputerMove = (board) => {
-  // Pick a random column number
-  const columnNumber = Math.floor(Math.random() * BOARDWIDTH)
+  const allowedCols = Array.from(
+    { length: BOARDWIDTH },
+    (value, index) => index
+  ).filter((colNum) => board[0][colNum].className === 'empty')
 
-  if (board[0][columnNumber].className !== 'empty') {
-    return generateComputerMove(board)
+  for (let colNum of allowedCols) {
+    rowNum = getLowestEmptyRowNumber(board, colNum)
+    boardCopy = board.map((row) =>
+      row.map((cell) => ({ className: cell.className }))
+    )
+    boardCopy[rowNum][colNum] = 'player2'
+    if (isWinner(boardCopy, 'player2', colNum, rowNum)) {
+      return colNum
+    }
+    boardCopy[rowNum][colNum] = 'player1'
+    if (isWinner(boardCopy, 'player1', colNum, rowNum)) {
+      return colNum
+    }
   }
 
-  return columnNumber
+  // Pick a random column number
+  return allowedCols[Math.floor(Math.random() * allowedCols.length)]
 }
 
 const selectGameMode = () => {
