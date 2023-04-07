@@ -40,45 +40,53 @@ const getLowestEmptyRowNumber = (board, columnNumber) => {
   return i
 }
 
-const countCells = (board, player, j, i, dj, di) => {
-  let count = 0
-
-  while (
-    j >= 0 &&
-    j < BOARDHEIGHT &&
-    i >= 0 &&
-    i < BOARDWIDTH &&
-    board[j][i].className === player
-  ) {
-    count++
-    j += dj
-    i += di
+const isWinner = (board, player) => {
+  // HORIZONTAL
+  for (let rowNum = 0; rowNum < BOARDHEIGHT; rowNum++) {
+    const rowArray = board[rowNum]
+    for (let x = 0; x < BOARDWIDTH - 3; x++) {
+      const window = rowArray.slice(x, x + 4)
+      if (window.filter((c) => c.className === player).length === 4) {
+        return true
+      }
+    }
   }
 
-  return count
-}
+  // VERTICAL
+  for (let colNum = 0; colNum < BOARDWIDTH; colNum++) {
+    const colArray = board.map((row) => row[colNum])
+    for (let y = 0; y < BOARDHEIGHT - 3; y++) {
+      const window = colArray.slice(y, y + 4)
+      if (window.filter((c) => c.className === player).length === 4) {
+        return true
+      }
+    }
+  }
 
-const isWinner = (board, player, x, y) => {
-  const countColumn = countCells(board, player, y + 1, x, 1, 0) + 1
-  const countRow =
-    countCells(board, player, y, x - 1, 0, -1) +
-    countCells(board, player, y, x + 1, 0, 1) +
-    1
-  const countDiagonal1 =
-    countCells(board, player, y - 1, x - 1, -1, -1) +
-    countCells(board, player, y + 1, x + 1, 1, 1) +
-    1
-  const countDiagonal2 =
-    countCells(board, player, y + 1, x - 1, 1, -1) +
-    countCells(board, player, y - 1, x + 1, -1, 1) +
-    1
+  for (let rowNum = 0; rowNum < BOARDHEIGHT - 3; rowNum++) {
+    //DESC DIAGONAL
+    for (let colNum = 0; colNum < BOARDWIDTH - 3; colNum++) {
+      const window = []
+      for (let i = 0; i < 4; i++) {
+        window.push(board[rowNum + i][colNum + i])
+      }
+      if (window.filter((c) => c.className === player).length === 4) {
+        return true
+      }
+    }
+    // ASC DIAGONAL
+    for (let colNum = 3; colNum < BOARDWIDTH; colNum++) {
+      const window = []
+      for (let i = 0; i < 4; i++) {
+        window.push(board[rowNum + i][colNum - i])
+      }
+      if (window.filter((c) => c.className === player).length === 4) {
+        return true
+      }
+    }
+  }
 
-  return (
-    countColumn >= 4 ||
-    countRow >= 4 ||
-    countDiagonal1 >= 4 ||
-    countDiagonal2 >= 4
-  )
+  return false
 }
 
 const drop = async (board, player, rowNumber, colNumber, currentRow) => {
@@ -93,29 +101,165 @@ const drop = async (board, player, rowNumber, colNumber, currentRow) => {
   }
 }
 
-const generateComputerMove = (board) => {
-  const allowedCols = Array.from(
-    { length: BOARDWIDTH },
-    (value, index) => index
-  ).filter((colNum) => board[0][colNum].className === 'empty')
+const scoreWindow = (window, player) => {
+  let score = 0
+  let opponent = player === 'player2' ? 'player1' : 'player2'
+  const nbOfPlayerCells = window.filter((c) => c.className === player).length
+  const nbOfOpponentCells = window.filter(
+    (c) => c.className === opponent
+  ).length
+  const nbOfEmptyCells = window.filter((c) => c.className === 'empty').length
+  if (nbOfPlayerCells === 4) {
+    score += 100
+  } else if (nbOfPlayerCells === 3 && nbOfEmptyCells === 1) {
+    score += 10
+  } else if (nbOfPlayerCells === 2 && nbOfEmptyCells === 2) {
+    score += 5
+  }
 
-  for (let colNum of allowedCols) {
-    rowNum = getLowestEmptyRowNumber(board, colNum)
-    boardCopy = board.map((row) =>
-      row.map((cell) => ({ className: cell.className }))
-    )
-    boardCopy[rowNum][colNum] = 'player2'
-    if (isWinner(boardCopy, 'player2', colNum, rowNum)) {
-      return colNum
+  if (nbOfOpponentCells === 3 && nbOfEmptyCells === 1) {
+    score -= 80
+  }
+
+  return score
+}
+
+const scoreBoard = (board, player) => {
+  let score = 0
+  // CENTER COLUMN
+  let centerCount = 0
+  for (let rowNum = 0; rowNum < BOARDHEIGHT; rowNum++) {
+    if (board[rowNum][Math.floor(BOARDWIDTH / 2)].className === player) {
+      centerCount++
     }
-    boardCopy[rowNum][colNum] = 'player1'
-    if (isWinner(boardCopy, 'player1', colNum, rowNum)) {
-      return colNum
+  }
+  score += centerCount * 6
+
+  // HORIZONTAL
+  for (let rowNum = 0; rowNum < BOARDHEIGHT; rowNum++) {
+    const rowArray = board[rowNum]
+    for (let x = 0; x < BOARDWIDTH - 3; x++) {
+      const window = rowArray.slice(x, x + 4)
+      score += scoreWindow(window, player)
     }
   }
 
-  // Pick a random column number
-  return allowedCols[Math.floor(Math.random() * allowedCols.length)]
+  // VERTICAL
+  for (let colNum = 0; colNum < BOARDWIDTH; colNum++) {
+    const colArray = board.map((row) => row[colNum])
+    for (let y = 0; y < BOARDHEIGHT - 3; y++) {
+      const window = colArray.slice(y, y + 4)
+      score += scoreWindow(window, player)
+    }
+  }
+
+  for (let rowNum = 0; rowNum < BOARDHEIGHT - 3; rowNum++) {
+    //DESC DIAGONAL
+    for (let colNum = 0; colNum < BOARDWIDTH - 3; colNum++) {
+      const window = []
+      for (let i = 0; i < 4; i++) {
+        window.push(board[rowNum + i][colNum + i])
+      }
+      score += scoreWindow(window, player)
+    }
+    // ASC DIAGONAL
+    for (let colNum = 3; colNum < BOARDWIDTH; colNum++) {
+      const window = []
+      for (let i = 0; i < 4; i++) {
+        window.push(board[rowNum + i][colNum - i])
+      }
+      score += scoreWindow(window, player)
+    }
+  }
+
+  return score
+}
+
+const getAllowedCols = (board) => {
+  return Array.from({ length: BOARDWIDTH }, (value, index) => index).filter(
+    (colNum) => board[0][colNum].className === 'empty'
+  )
+}
+
+const isTerminalNode = (board) => {
+  return (
+    isWinner(board, 'player1') ||
+    isWinner(board, 'player2') ||
+    getAllowedCols(board).length === 0
+  )
+}
+
+const minimax = (board, depth, maximizingPlayer) => {
+  const allowedCols = getAllowedCols(board)
+  const terminalNode = isTerminalNode(board)
+  if (depth === 0 || terminalNode) {
+    if (terminalNode) {
+      if (isWinner(board, 'player2')) {
+        return {
+          bestScore: Infinity,
+          bestColNum: null,
+        }
+      }
+      if (isWinner(board, 'player1')) {
+        return {
+          bestScore: -Infinity,
+          bestColNum: null,
+        }
+      }
+      return {
+        bestScore: 0,
+        bestColNum: null,
+      }
+    }
+    return {
+      bestScore: scoreBoard(board, 'player2'),
+      bestColNum: null,
+    }
+  }
+
+  if (maximizingPlayer) {
+    let bestScore = -Infinity
+    let bestColNum = allowedCols[Math.floor(Math.random() * allowedCols.length)]
+    for (let colNum of allowedCols) {
+      const boardCopy = board.map((row) =>
+        row.map((cell) => ({ className: cell.className }))
+      )
+      boardCopy[getLowestEmptyRowNumber(board, colNum)][colNum].className =
+        'player2'
+      const score = minimax(boardCopy, depth - 1, false).bestScore
+      if (score > bestScore) {
+        bestScore = score
+        bestColNum = colNum
+      }
+    }
+    return {
+      bestScore,
+      bestColNum,
+    }
+  }
+
+  let bestScore = Infinity
+  let bestColNum = allowedCols[Math.floor(Math.random() * allowedCols.length)]
+  for (let colNum of allowedCols) {
+    const boardCopy = board.map((row) =>
+      row.map((cell) => ({ className: cell.className }))
+    )
+    boardCopy[getLowestEmptyRowNumber(board, colNum)][colNum].className =
+      'player1'
+    const score = minimax(boardCopy, depth - 1, true).bestScore
+    if (score < bestScore) {
+      bestScore = score
+      bestColNum = colNum
+    }
+  }
+  return {
+    bestScore,
+    bestColNum,
+  }
+}
+
+const generateComputerMove = (board) => {
+  return minimax(board, 3, true).bestColNum
 }
 
 const selectGameMode = () => {
@@ -154,7 +298,7 @@ const game = (mode) => {
     blockedInput = true
     turnCounter++
     await drop(board, player, rowNumber, colNumber, 0)
-    if (isWinner(board, player, colNumber, rowNumber)) {
+    if (isWinner(board, player)) {
       messageElt.textContent = `${player} has won!`
       gameOver = true
       return
@@ -172,7 +316,7 @@ const game = (mode) => {
       const rowNumber = getLowestEmptyRowNumber(board, columnNumber)
       turnCounter++
       await drop(board, player, rowNumber, columnNumber, 0)
-      if (isWinner(board, player, columnNumber, rowNumber)) {
+      if (isWinner(board, player)) {
         messageElt.textContent = `${player} has won!`
         gameOver = true
         return
