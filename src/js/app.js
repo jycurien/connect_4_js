@@ -5,6 +5,7 @@ const BOARDWIDTH = 7
 
 const initBoard = (height, width) => {
   const boardElt = document.querySelector('#board')
+  const messageElt = document.querySelector('#message')
 
   const tableElt = document.createElement('table')
   boardElt.appendChild(tableElt)
@@ -20,6 +21,8 @@ const initBoard = (height, width) => {
     }
     tableElt.appendChild(rowElt)
   }
+  boardElt.style.display = 'block'
+  messageElt.style.display = 'block'
   return board
 }
 
@@ -90,7 +93,27 @@ const drop = async (board, player, rowNumber, colNumber, currentRow) => {
   }
 }
 
-const game = () => {
+const generateComputerMove = (board) => {
+  // Pick a random column number
+  const columnNumber = Math.floor(Math.random() * BOARDWIDTH)
+
+  if (board[0][columnNumber].className !== 'empty') {
+    return generateComputerMove(board)
+  }
+
+  return columnNumber
+}
+
+const selectGameMode = () => {
+  document.querySelectorAll('#selectGameMode button').forEach((btn) =>
+    btn.addEventListener('click', function (e) {
+      game(e.target.dataset.mode)
+      document.querySelector('#selectGameMode').remove()
+    })
+  )
+}
+
+const game = (mode) => {
   const board = initBoard(BOARDHEIGHT, BOARDWIDTH)
   const maxNumberOfTurns = BOARDHEIGHT * BOARDWIDTH
   const messageElt = document.querySelector('#message')
@@ -98,9 +121,15 @@ const game = () => {
   let player = 'player1'
   let gameOver = false
   let blockedInput = false
+  let vsComputer = mode === 'computer'
 
   document.querySelector('table').addEventListener('click', async function (e) {
-    if (gameOver || undefined === e.target.dataset.column || blockedInput) {
+    if (
+      gameOver ||
+      undefined === e.target.dataset.column ||
+      blockedInput ||
+      (vsComputer && player === 'player2')
+    ) {
       return
     }
     const colNumber = parseInt(e.target.dataset.column, 10)
@@ -123,10 +152,30 @@ const game = () => {
     }
     player = player === 'player1' ? 'player2' : 'player1'
     messageElt.textContent = `${player} turn`
+    // Computer turn
+    if (vsComputer && player === 'player2') {
+      const columnNumber = generateComputerMove(board)
+      const rowNumber = getLowestEmptyRowNumber(board, columnNumber)
+      turnCounter++
+      await drop(board, player, rowNumber, columnNumber, 0)
+      if (isWinner(board, player, columnNumber, rowNumber)) {
+        messageElt.textContent = `${player} has won!`
+        gameOver = true
+        return
+      }
+      if (turnCounter === maxNumberOfTurns) {
+        messageElt.textContent = `It's a draw game!`
+        gameOver = true
+        return
+      }
+      player = 'player1'
+      document.querySelector('#message').textContent = `${player} turn`
+    }
+
     blockedInput = false
   })
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  game()
+  selectGameMode()
 })
